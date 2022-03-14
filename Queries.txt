@@ -1,0 +1,67 @@
+ /* Query1 */
+ WITH tab1 AS
+  (SELECT COUNT(i.InvoiceId) songs_purchases,
+          c.country,
+          g.name,
+          g.genreId
+   FROM invoice i
+   JOIN customer c ON i.customerId = c.customerId
+   JOIN invoiceline il ON il.invoiceid = i.invoiceId
+   JOIN track t ON t.trackId = il.trackid
+   JOIN genre g ON t.genreId = g.genreId
+   GROUP BY c.country,
+            g.name
+   ORDER BY c.country,
+            g.genreId DESC)
+SELECT tab1.*
+FROM tab1
+JOIN
+  (SELECT MAX(songs_purchases) AS maximum_purchases,
+          country,
+          name,
+          genreId
+   FROM tab1
+   GROUP BY country)tab2 ON tab1.country = tab2.country
+WHERE tab1.songs_purchases = tab2.maximum_purchases;
+
+/* Query2 */ 
+WITH t1 AS
+  (SELECT c.country,
+          c.firstName,
+          c.lastName,
+          SUM(i.Total) total_spent,
+          c.customerId
+   FROM customer c
+   JOIN invoice i ON c.customerId = i.customerId
+   GROUP BY c.customerId)
+SELECT t1.*
+FROM t1 JOIN
+  (SELECT country, customerId, firstname, lastname, MAX(total_spent) AS total_spent
+   FROM t1
+   GROUP BY country)t2 ON t1.country = t2.country
+WHERE t1.total_spent = t2.total_spent
+ORDER BY total_spent DESC ;
+
+/* Query3 */
+SELECT a.name artistName,
+       SUM(il.quantity*il.unitPrice) revenue_amount
+FROM invoice i
+JOIN invoiceLine il ON il.invoiceId = i.invoiceId
+JOIN track t ON t.trackId = il.trackId
+JOIN album alm ON alm.albumId = t.albumId
+JOIN artist a ON a.artistId = alm.artistId
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+
+/* Query4 */
+SELECT Ar.Name,
+       COUNT(g.Name) AS number_of_songs
+FROM Genre g
+JOIN Track t ON g.GenreId=t.GenreId
+JOIN Album Al ON t.AlbumId=Al.AlbumId
+JOIN Artist Ar ON Al.ArtistId=Ar.ArtistId
+AND g.Name='Rock'
+GROUP BY Ar.Name
+ORDER BY COUNT(g.Name) DESC
+LIMIT 15;
